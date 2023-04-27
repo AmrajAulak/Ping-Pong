@@ -1,5 +1,7 @@
 var c = document.getElementById("Canvas");
 var ctx = c.getContext("2d");
+leftScore = 0;
+rightScore = 0;
 
 
 class Ball{
@@ -7,12 +9,13 @@ class Ball{
     	this.radius = 15;
       	this.posX = c.width / 2;
         this.posY = c.height / 2;
-        this.theta = Math.floor(Math.random() * 91);
-        this.speed = 5;
+        this.theta = Math.floor(Math.random() * 46);
+        this.speed = 3;
         this.direction = this.set_direction();
         this.velX = - this.speed * Math.cos(this.theta * Math.PI / 180);
         this.velY = this.direction * this.speed * Math.sin(this.theta * Math.PI / 180);
         this.colour = 'yellow'
+        this.speedIncrease = 0.2;
 
     }
 
@@ -33,6 +36,21 @@ class Ball{
         this.posY += this.velY;
     }
 
+    increase_velocity(){
+        if (this.velX > 0){
+            this.velX += this.speedIncrease
+        }
+        if (this.velY > 0){
+            this.velY += this.speedIncrease
+        }
+        if (this.velX < 0){
+            this.velX -= this.speedIncrease
+        }
+        if (this.velY < 0){
+            this.velX -= this.speedIncrease
+        }
+    }
+
   	draw(){
 
         ctx.beginPath();
@@ -41,20 +59,19 @@ class Ball{
         ctx.fill();
         ctx.setLineDash([]);
         ctx.lineWidth = 2;
+        ctx.strokeStyle = 'black'
         ctx.stroke();
     }
 }
 
 class Paddle{
-	constructor(posX, posY, paddleHeight){
+	constructor(posX, posY, paddleHeight, colour){
       	this.posX = posX;
         this.posY = posY;
         this.speed = 10;
-        this.colour = 'white'
+        this.colour = colour;
         this.width = 15;
         this.height = paddleHeight;
-        this.score = 0
-
     }
 
     moveUp(){
@@ -76,11 +93,18 @@ class Paddle{
         ctx.fill();
         ctx.setLineDash([]);
         ctx.lineWidth = 1;
+        ctx.strokeStyle = 'black'
         ctx.stroke();
     }
 }
 
-function check_collision(ball, paddleL, paddleR){
+function reset_game(intervalID){
+    document.getElementById("Score").innerHTML = leftScore + " : " + rightScore;
+    clearInterval(intervalID);
+    run_game()
+}
+
+function check_collision(ball, paddleL, paddleR, intervalID){
     if ((ball.posY - ball.radius) <= 0){
         ball.velY = ball.velY * -1;
     }
@@ -89,27 +113,30 @@ function check_collision(ball, paddleL, paddleR){
         ball.velY = ball.velY * -1;
     }
 
-    if ((ball.posX - ball.radius) <= 0){
-        paddleR.score++;
-        document.getElementById("Score").innerHTML = paddleL.score + " : " + paddleR.score;
-        run_game()
+    if ((ball.posX + ball.radius) < 0){
+        rightScore++;
+        reset_game(intervalID)
+        
     }
 
-    if ((ball.posX + ball.radius) >= c.width){
-        paddleL.score++;
-        document.getElementById("Score").innerHTML = paddleL.score + " : " + paddleR.score;
-        run_game()
+    if ((ball.posX - ball.radius) > c.width){
+        leftScore++;
+        reset_game(intervalID)
     }
 
     if ((ball.posY >= paddleL.posY) && (ball.posY <= (paddleL.posY + paddleL.height))){
         if ((ball.posX - ball.radius) <= (paddleL.posX + paddleL.width)){
+            ball.posX = paddleL.posX + paddleL.width + ball.radius
             ball.velX = ball.velX * -1;
+            ball.increase_velocity()
         }
     }
 
     if ((ball.posY >= paddleR.posY) && (ball.posY <= (paddleR.posY + paddleR.height))){
         if ((ball.posX + ball.radius) >= (paddleR.posX)){
+            ball.posX = paddleR.posX - ball.radius
             ball.velX = ball.velX * -1;
+            ball.increase_velocity()
         }
     }
     
@@ -119,9 +146,9 @@ function draw_net(){
     ctx.beginPath();
     ctx.moveTo(c.width/2, 0);
     ctx.lineTo(c.width/2, c.height);
-    //ctx.strokeStyle = 'white'
+    ctx.strokeStyle = 'white'
     ctx.setLineDash([10, 10]);
-    ctx.lineWidth = 1
+    ctx.lineWidth = 2
     ctx.stroke();
 }
 
@@ -138,47 +165,50 @@ function run_game(){
     const ball = new Ball()
 
     paddleHeight = 80;
-    const paddleL = new Paddle(30, (c.height - paddleHeight)/2, paddleHeight)
-    const paddleR = new Paddle(c.width - 45, (c.height - 80)/2, paddleHeight)
+    this.speed = 10;
+    const paddleL = new Paddle(30, (c.height - paddleHeight)/2, paddleHeight, 'DodgerBlue')
+    const paddleR = new Paddle(c.width - 45, (c.height - 80)/2, paddleHeight, 'Crimson')
+    
+    var start = false;
+
 
     document.body.addEventListener('keydown', function(event) {
-        var str = "";
         const key = event.key;
         switch (key) {
             
             case "ArrowUp":
-                str = 'Up';
                 paddleR.moveUp()
                 break;
             case "ArrowDown":
-                str = 'Down';
                 paddleR.moveDown()
                 break;
             case "w":
-                str = 'W';
                 paddleL.moveUp()
                 break;
             case "s":
-                str = 'S';
                 paddleL.moveDown()
                 break;
+            case "Enter":
+                start = true
+                break
         }
 
-        console.log(str)
     });
 
-    const intervalID = setInterval(update, 50)//Runs the "func" function every second
+ 
+   var intervalID = setInterval(update, 20)
+   render(ball, paddleL, paddleR);
 
-   // window.requestAnimationFrame(render(ball, paddleL, paddleR));
 
    function update(){
-    ball.move()
-    check_collision(ball, paddleL, paddleR)
-    render(ball, paddleL, paddleR);
+    if (start){
+        ball.move()
+        check_collision(ball, paddleL, paddleR, intervalID)
+        render(ball, paddleL, paddleR);
+    }
+    //requestAnimationFrame(update)
     }
 
-
 }
-
 
 run_game()
