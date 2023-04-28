@@ -65,10 +65,10 @@ class Ball{
 }
 
 class Paddle{
-	constructor(posX, posY, paddleHeight, colour){
+	constructor(posX, posY, paddleHeight, colour, speed){
       	this.posX = posX;
         this.posY = posY;
-        this.speed = 10;
+        this.speed = speed;
         this.colour = colour;
         this.width = 15;
         this.height = paddleHeight;
@@ -142,6 +142,16 @@ function check_collision(ball, paddleL, paddleR, intervalID){
     
 }
 
+function AI_move(ball, paddleR){
+    if (ball.posY < paddleR.posY){
+        paddleR.moveUp()
+    }
+
+    if (ball.posY > (paddleR.posY + paddleR.height)){
+        paddleR.moveDown()
+    }
+}
+
 function draw_net(){
     ctx.beginPath();
     ctx.moveTo(c.width/2, 0);
@@ -165,9 +175,10 @@ function run_game(){
     const ball = new Ball()
 
     paddleHeight = 80;
-    this.speed = 10;
-    const paddleL = new Paddle(30, (c.height - paddleHeight)/2, paddleHeight, 'DodgerBlue')
-    const paddleR = new Paddle(c.width - 45, (c.height - 80)/2, paddleHeight, 'Crimson')
+    paddleL_speed = 10;
+    paddleR_speed = 2;
+    const paddleL = new Paddle(30, (c.height - paddleHeight)/2, paddleHeight, 'DodgerBlue', paddleL_speed)
+    const paddleR = new Paddle(c.width - 45, (c.height - 80)/2, paddleHeight, 'Crimson', paddleR_speed)
     
     var start = false;
 
@@ -176,12 +187,12 @@ function run_game(){
         const key = event.key;
         switch (key) {
             
-            case "ArrowUp":
-                paddleR.moveUp()
-                break;
-            case "ArrowDown":
-                paddleR.moveDown()
-                break;
+            // case "ArrowUp":
+            //     paddleR.moveUp()
+            //     break;
+            // case "ArrowDown":
+            //     paddleR.moveDown()
+            //     break;
             case "w":
                 paddleL.moveUp()
                 break;
@@ -203,6 +214,7 @@ function run_game(){
    function update(){
     if (start){
         ball.move()
+        AI_move(ball, paddleR)
         check_collision(ball, paddleL, paddleR, intervalID)
         render(ball, paddleL, paddleR);
     }
