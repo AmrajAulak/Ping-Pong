@@ -11,9 +11,9 @@ class Ball{
         this.posY = c.height / 2;
         this.theta = Math.floor(Math.random() * 46);
         this.speed = 3;
-        this.direction = this.set_direction();
+        this.directionY = this.set_direction();
         this.velX = - this.speed * Math.cos(this.theta * Math.PI / 180);
-        this.velY = this.direction * this.speed * Math.sin(this.theta * Math.PI / 180);
+        this.velY = this.directionY * this.speed * Math.sin(this.theta * Math.PI / 180);
         this.colour = 'yellow'
         this.speedIncrease = 0.2;
 
@@ -36,19 +36,43 @@ class Ball{
         this.posY += this.velY;
     }
 
-    increase_velocity(){
-        if (this.velX > 0){
-            this.velX += this.speedIncrease
+    increase_speed(){
+        this.speed += this.speedIncrease;
+    }
+
+    paddle_hit(paddle_center, player){
+        let range = [10, 25, 35] 
+        let y_direction = ""
+
+        if ((Math.abs(this.posY - paddle_center)) <= range[0]){
+            this.theta = 0
+        } else if ((Math.abs(this.posY - paddle_center)) <= range[1]){
+            this.theta = 20
+        } else if ((Math.abs(this.posY - paddle_center)) <= range[2]){
+            this.theta = 40
+        } else {
+            this.theta = 65
         }
-        if (this.velY > 0){
-            this.velY += this.speedIncrease
+
+        if ((this.posY - paddle_center) < 0){
+            y_direction = "up"
+        } else{
+            y_direction = "down"
         }
-        if (this.velX < 0){
-            this.velX -= this.speedIncrease
+
+
+        if (player === "left"){
+            this. velX = this.speed * Math.cos(this.theta * Math.PI / 180);
+        } else{
+            this. velX = -1 * this.speed * Math.cos(this.theta * Math.PI / 180);
         }
-        if (this.velY < 0){
-            this.velX -= this.speedIncrease
+
+        if (y_direction === "up"){
+            this. velY = -1 * this.speed * Math.sin(this.theta * Math.PI / 180);
+        } else{
+            this. velY = 1 * this.speed * Math.sin(this.theta * Math.PI / 180);
         }
+
     }
 
   	draw(){
@@ -85,6 +109,7 @@ class Paddle{
             this.posY += this.speed;
         }
     }
+    
 
   	draw(){
         ctx.beginPath();
@@ -127,16 +152,18 @@ function check_collision(ball, paddleL, paddleR, intervalID){
     if ((ball.posY >= paddleL.posY) && (ball.posY <= (paddleL.posY + paddleL.height))){
         if ((ball.posX - ball.radius) <= (paddleL.posX + paddleL.width)){
             ball.posX = paddleL.posX + paddleL.width + ball.radius
-            ball.velX = ball.velX * -1;
-            ball.increase_velocity()
+            let left_center = paddleL.posY + (paddleL.height / 2)
+            ball.increase_speed();
+            ball.paddle_hit(left_center, "left")
         }
     }
 
     if ((ball.posY >= paddleR.posY) && (ball.posY <= (paddleR.posY + paddleR.height))){
         if ((ball.posX + ball.radius) >= (paddleR.posX)){
             ball.posX = paddleR.posX - ball.radius
-            ball.velX = ball.velX * -1;
-            ball.increase_velocity()
+            let right_center = paddleR.posY + (paddleR.height / 2)
+            ball.increase_speed();
+            ball.paddle_hit(right_center, "right")
         }
     }
     
@@ -176,7 +203,7 @@ function run_game(){
 
     paddleHeight = 80;
     paddleL_speed = 10;
-    paddleR_speed = 2;
+    paddleR_speed = 4;
     const paddleL = new Paddle(30, (c.height - paddleHeight)/2, paddleHeight, 'DodgerBlue', paddleL_speed)
     const paddleR = new Paddle(c.width - 45, (c.height - 80)/2, paddleHeight, 'Crimson', paddleR_speed)
     
@@ -187,12 +214,6 @@ function run_game(){
         const key = event.key;
         switch (key) {
             
-            // case "ArrowUp":
-            //     paddleR.moveUp()
-            //     break;
-            // case "ArrowDown":
-            //     paddleR.moveDown()
-            //     break;
             case "w":
                 paddleL.moveUp()
                 break;
